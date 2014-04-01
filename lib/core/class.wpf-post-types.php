@@ -1,8 +1,4 @@
 <?php
-
-if(!deifined('ABSPATH'))
-	die();
-
 /**
  * Base class for registering a custom post type in WordPress.
  *
@@ -10,7 +6,7 @@ if(!deifined('ABSPATH'))
  * @since 1.0
  */
 class WPF_Post_Type {
-
+	
 	/**
 	 * @access public
 	 * @since 1.0
@@ -18,7 +14,7 @@ class WPF_Post_Type {
 	 * @var string
 	 */
 	var $post_type = '';
-
+	
 	/**
 	 * @access public
 	 * @since 1.0
@@ -26,7 +22,7 @@ class WPF_Post_Type {
 	 * @var array
 	 */
 	var $post_type_args = array();
-
+	
 	/**
 	 * @access public
 	 * @since 1.0
@@ -34,7 +30,7 @@ class WPF_Post_Type {
 	 * @var array
 	 */
 	var $taxonomies = array();
-
+	
 	/**
 	 * @access public
 	 * @since 1.0
@@ -42,7 +38,7 @@ class WPF_Post_Type {
 	 * @var array
 	 */
 	var $edit_columns = array();
-
+	
 	/**
 	 * @access public
 	 * @since 1.0
@@ -50,7 +46,7 @@ class WPF_Post_Type {
 	 * @var array
 	 */
 	var $meta_boxes = array();
-
+	
 	/**
 	 * @access public
 	 * @since 1.0
@@ -58,29 +54,27 @@ class WPF_Post_Type {
 	 * @var array
 	 */
 	var $statuses = array();
-
+	
 	/**
 	 * A collection of common meta boxes included in the theme
 	 */
 	var $core_boxes = array('wpf_date');
-
-
 	var $registered_statuses = array();
-
+	
 	var $tax_with_cpt = array();
-
+	
 	var $_title_changes = array();
-
+	
 	/**
 	 * Constructor function for setting up everything we need
 	 * Checks other post_types and taxonomies for conflicts and removes them if necessary
-	 *
+	 * 
 	 * @see function wpf_register_post_type in /lib/functions/theme-functions.php
 	 * @since 1.0
-	 *
+	 * 
 	 */
 	function __construct($post_type, $post_type_args=array(), $taxonomies=array(), $edit_columns=array(), $meta_boxes=array(), $statuses=array()) {
-
+		
 		if(is_array($taxonomies) && !empty($taxonomies)) {
 			$all_taxes = get_taxonomies(NULL,'names');
 			foreach($taxonomies as $tax => $args) {
@@ -90,7 +84,7 @@ class WPF_Post_Type {
 			}
 			$this->taxonomies = $taxonomies;
 		}
-
+		
 		if(is_array($statuses) && !empty($statuses)) {
 			global $wp_post_statuses;
 			foreach($statuses as $status => $args) {
@@ -100,7 +94,7 @@ class WPF_Post_Type {
 			}
 			$this->statuses = $statuses;
 		}
-
+		
 		$all_types = get_post_types(NULL,'names');
 		if(in_array($post_type,$all_types)) {
 			$this->post_type = false;
@@ -110,32 +104,32 @@ class WPF_Post_Type {
 			add_action('init', array($this,'register_items'));
 			add_action('save_post_'.$this->post_type, array($this, 'save_post'));
 			add_action('admin_print_scripts', array($this, '_print_icon_32_css'));
-
+			
 		}
-
+		
 		if(is_array($post_type_args) && !empty($post_type_args)) {
 			$this->post_type_args = $post_type_args;
 		}
-
-		if(is_array($edit_columns) && !empty($edit_columns)) {
+		
+		if(is_array($edit_columns) && !empty($edit_columns)) {	
 			$this->edit_columns = $edit_columns;
 			add_filter('manage_edit-'.$this->post_type.'_columns', array($this, 'manage_edit_columns'));
 		}
-
+		
 		if(is_array($meta_boxes) && !empty($meta_boxes) && is_admin()) {
 			$this->meta_boxes = $meta_boxes;
 			add_action('add_meta_boxes_'.$this->post_type, array($this, 'add_meta_boxes'));
 		}
-
+		
 	}
-
+	
 	/**
 	 * This function merges all our parameters and registers all post_types and taxonomies
-	 *
+	 * 
 	 * @since 1.0
 	 */
 	function register_items() {
-
+		
 		if(!$this->post_type || empty($this->post_type))
 			return false;
 
@@ -143,7 +137,7 @@ class WPF_Post_Type {
 		$this->post_type_name_plural = $name_guess_plural = (isset($this->post_type_args['plural_name']) ? (STRING)$this->post_type_args['plural_name'] : ucwords(str_replace(array('-','_',),' ', $this->post_type)).'s' );
 		$this->enter_title_here = (isset($this->post_type_args['enter_title_here']) ? $this->post_type_args['enter_title_here'] : 'Ente title here' );
 		$icon_check = $this->_check_for_icon('16');
-
+		
 		$default_args = array(
 			'labels' => array(
 				'name' => $name_guess_plural,
@@ -163,7 +157,7 @@ class WPF_Post_Type {
 			),
 			'public' => true,
 			'publicly_queryable' => true,
-			'show_ui' => true,
+			'show_ui' => true, 
 			'show_in_menu' => true,
 			'query_var' => true,
 			'rewrite' => array(
@@ -179,13 +173,13 @@ class WPF_Post_Type {
 			'supports' => array(),
 			'menu_icon' => $icon_check
 		);
-
+		
 		$this->post_type_args = array_replace_recursive($default_args,$this->post_type_args);
 		register_post_type($this->post_type, $this->post_type_args);
-
+		
 		// Use our name guess to give a custom filter for the Enter Title Here input placeholder
 		add_filter('enter_title_here', array($this, '_fix_enter_title_here'), 10, 2 );
-
+		
 		if(!empty($this->edit_columns)) {
 			if($this->post_type_args['hierarchical']) {
 				add_action('manage_'.$this->post_type.'_pages_custom_column', array(&$this, 'manage_custom_columns'));
@@ -193,16 +187,16 @@ class WPF_Post_Type {
 				add_action('manage_'.$this->post_type.'_posts_custom_column', array(&$this, 'manage_custom_columns'));
 			}
 		}
-
+		
 		if(is_array($this->taxonomies) && !empty($this->taxonomies)) {
 			foreach($this->taxonomies as $tax => $tax_args) {
 				$name_guess = (isset($tax_args['labels']['name']) ? (STRING)$tax_args['labels']['name'] : ucwords((STRING)$tax) );
 				$name_guess_plural = (isset($tax_args['labels']['plural_name']) ? (STRING)$tax_args['labels']['plural_name'] : ucwords((STRING)$tax).'s' );
-
+				
 				$default_tax_args = array(
 					'hierarchical' => true,
 					'labels' => array(
-						'name' => $name_guess_plural,
+					    'name' => $name_guess_plural,
 						'singular_name' => $name_guess,
 						'search_items' => sprintf(__('Search %s',t()),$name_guess_plural),
 						'popular_items' => sprintf(__('Popular %s',t()),$name_guess_plural),
@@ -229,8 +223,8 @@ class WPF_Post_Type {
 					//'capabilities' => array(),
 					'sort' => NULL,
 				);
-
-
+				
+				
 				$tax_args = array_replace_recursive($default_tax_args, $tax_args);
 				register_taxonomy( $tax, $this->post_type, $tax_args );
 			}
@@ -238,9 +232,9 @@ class WPF_Post_Type {
 
 		if(is_array($this->statuses) && !empty($this->statuses)) {
 			foreach($this->statuses as $status_id => $status_args) {
-
+				
 				$name_guess = (isset($args['label']) ? (STRING)$args['label'] : ucwords((STRING)$status_id) );
-
+				
 				$default_status_args = array(
 					'label' => $name_guess,
 					'public' => true,
@@ -251,7 +245,7 @@ class WPF_Post_Type {
 				);
 				$this->registered_statuses[$status_id] = array_replace_recursive($default_status_args, $status_args);
 				register_post_status($status_id, $this->registered_statuses[$status_id]);
-
+				
 				add_action('admin_head', array(&$this, '_print_post_status_js'));
 			}
 		}
@@ -262,7 +256,7 @@ class WPF_Post_Type {
 				}
 			}
 		}
-
+		
 		add_action('init', array(&$this, 'flush_rewrite_rules'), 999);
 	}
 	function do_term_with_cpt_link( $termlink, $term, $taxonomy ) {
@@ -288,7 +282,7 @@ class WPF_Post_Type {
 				$this->tax_with_cpt[] = $tax;
 			}
 		}
-
+		
 		$last_options = get_option($this->post_type.'_post_type_args');
 		if( $last_options != array($this->post_type_args, $this->taxonomies, $this->tax_with_cpt) ) {
 			global $wp_rewrite;
@@ -301,22 +295,22 @@ class WPF_Post_Type {
 	 * A function for auto saving meta data to a custom post type
 	 * Anything inside the post_type array will automatically have it's value validated esc'd
 	 * and inserted into the post's meta.  Only one level of nested variables supported currently.
-	 *
+	 * 
 	 * @example <input type="text" name="post_type[meta_key]" value="Your Value" />
 	 * @example or.. <input type="checkbox" name="post_type[meta_key][nested_key] value="on" />
 	 */
 	function save_post($post_id) {
-
-
+		
+		
 		if(!$post = get_post($post_id))
 			return false;
 		$post_type  = esc_attr($this->post_type);
-
+		
 		if(!isset($_POST[$post_type]) || !is_array($_POST[$post_type]) || empty($_POST[$post_type]))
 			return;
-
+		
 		$prefix = 'ge_';
-
+		
 		foreach($_POST[$post_type] as $key => $value) {
 			if(is_array($value)) {
 				delete_post_meta($post->ID, $prefix.$key);
@@ -328,65 +322,65 @@ class WPF_Post_Type {
 				update_post_meta($post->ID, $prefix.$key, esc_attr($value));
 			}
 		}
-
+		
 		//do_action('wpf_'.$prefix.'_save_post');
-
+		
 	}
-
+	
 	function add_meta_boxes() {
 		if(!is_array($this->meta_boxes) || empty($this->meta_boxes))
 			return;
-
-
-		foreach($this->meta_boxes as $id => $params) {
+		
+		
+		foreach($this->meta_boxes as $id => $params) {			
 			if($id == 'wpf_date') {
 				add_action('admin_enqueue_scripts', create_function('', "wp_enqueue_script('jquery-ui-datepicker');"));
 				add_action('admin_enqueue_scripts', create_function('', "wp_enqueue_style('jquery-ui');"));
 			}
-
+			
 			$title = isset($params['title']) ? $params['title'] : $id;
 			$context = isset($params['context']) ? $params['context'] : 'side';
 			$priority = isset($params['priority']) ? $params['priority'] : 'default';
-
+			
 			add_meta_box($id, $title, array($this, 'metabox_display'), $this->post_type, $context, $priority);
 		}
-
+		
 		$this->_change_metabox_title('postimagediv', sprintf(__('%s Featured Image',t()), $this->post_type_name));
 		$this->_change_metabox_title('submitdiv', sprintf(__('Publish %s',t()),$this->post_type_name));
-
-
+		
+		
 		if(is_array($this->_title_changes) && !empty($this->_title_changes)) {
 			foreach($this->_title_changes as $change) {
 				$this->_change_metabox_title($change['id'], $change['title']);
 			}
 		}
 	}
-
+	
 	/**
 	 * This function searchs the framework library for a valid metabox file to include
-	 *
+	 * 
 	 * the metabox html id file search heirarchy inside /library/metaboxes/ would be as follows
-	 *
+	 * 
 	 * {post_type}-{metabox_id}-{post_status}.php
 	 * {post_type}-{metabox_id}.php
 	 * {post_type}.php
-	 *
+	 * 
 	 */
 	function metabox_display($post, $data) {
-
+		
 		if(!isset($data['id']))
 			return;
-
-
+		
+		
 		$type = $post->post_type;
 		$this->current_metabox_id = $box_id = $data['id'];
 		$status = $post->post_status;
 		$slug = $post->post_name;
-
+		
 		//$tips = wpf_get_tooltips();
 		/*$all_custom = get_post_custom($post->ID);
 		$meta = array();
-
+		
 		foreach($all_custom as $mkey => $mval) {
 			$prefix = $type.'_';
 			if(substr($mkey, 0, strlen($prefix)) == $prefix) {
@@ -395,81 +389,81 @@ class WPF_Post_Type {
 			}
 		}*/
 		$meta = ge_post_custom($post->ID, $type);
-
-
+		
+		
 		if(file_exists(WPF_ADMIN_METABOXES."{$type}-{$box_id}-{$slug}-{$status}.php")) {
 			include(WPF_ADMIN_METABOXES."{$type}-{$box_id}-{$slug}-{$status}.php");
 			return;
 		}
-
+		
 		if(file_exists(WPF_ADMIN_METABOXES."{$type}-{$box_id}-{$slug}.php")) {
 			include(WPF_ADMIN_METABOXES."{$type}-{$box_id}-{$slug}.php");
 			return;
 		}
-
+		
 		if(file_exists(WPF_ADMIN_METABOXES."{$type}-{$box_id}-{$status}.php")) {
 			include(WPF_ADMIN_METABOXES."{$type}-{$box_id}-{$status}.php");
 			return;
 		}
-
+		
 		if(file_exists(WPF_ADMIN_METABOXES."{$type}-{$box_id}.php")) {
 			include(WPF_ADMIN_METABOXES."{$type}-{$box_id}.php");
 			return;
 		}
-
+		
 		// Return Core Metaboxes last incase you want to override file
 		if(file_exists(WPF_ADMIN_METABOXES."{$box_id}.php")) {
 			include(WPF_ADMIN_METABOXES."{$box_id}.php");
 			return;
 		}
-
+		
 		if(file_exists(WPF_ADMIN_METABOXES."{$type}.php")) {
 			include(WPF_ADMIN_METABOXES."{$type}.php");
 			return;
 		}
-
+		
 		echo WPF_ADMIN_METABOXES."{$type}.php";
 		echo 'No Metabox Display Given';
 		return;
-
+		
 	}
-
+	
 	function manage_edit_columns($columns) {
-
+		
 		if(!is_array($this->edit_columns) || empty($this->edit_columns))
 			return $columns;
-
+		
 		if(isset($this->edit_columns['cb']))
 			$this->edit_columns['cb'] = $columns['cb'];
-
+		
 		return $this->edit_columns;
-
+		
 	}
-
+	
 	function manage_custom_columns($column) {
 		$file_path = WPF_ADMIN_COLUMNS.'/'.$column.'.php';
 		if(file_exists($file_path)) {
 			global $post;
 			include($file_path);
 		}
-
+		
 	}
 	function change_metabox_title($id='', $title='') {
 		if(!is_array($this->_title_changes))
 			$this->_title_changes = array();
-
+	
 		if(empty($id) || empty($title))
 			return;
-
-
+		
+		
 		$this->_title_changes[] = array(
 			'id' => $id,
 			'title' => $title,
 		);
-
+ 		
 	}
 	function _check_for_icon($size='16') {
-
+		
 		$icons = array(
 			'ico'.$size.'-'.$this->post_type.'.gif',
 			'ico'.$size.'-'.$this->post_type.'.jpeg',
@@ -509,18 +503,18 @@ class WPF_Post_Type {
 				jQuery( document ).ready( function($) {
 					$('#post_status').append($('<?php echo $options; ?>'));
 					<?php if($post->post_status) : ?>
-					$('#post_status').val('<?php echo $post->post_status; ?>');
-					<?php
-						$status_label = (isset($this->registered_statuses[$post->post_status]['label']) ? $this->registered_statuses[$post->post_status]['label'] : '');
-						$status_button_label = (isset($this->registered_statuses[$post->post_status]['button_label']) ? $this->registered_statuses[$post->post_status]['button_label'] : 'Update');
-					?>
-
-					$('#post-status-display').html('<?php echo $status_label; ?>');
-					$('#publish').val('<?php echo $status_button_label; ?>').attr('name','save');
+						$('#post_status').val('<?php echo $post->post_status; ?>');
+						<?php
+							$status_label = (isset($this->registered_statuses[$post->post_status]['label']) ? $this->registered_statuses[$post->post_status]['label'] : '');
+							$status_button_label = (isset($this->registered_statuses[$post->post_status]['button_label']) ? $this->registered_statuses[$post->post_status]['button_label'] : 'Update');
+						?>
+						
+						$('#post-status-display').html('<?php echo $status_label; ?>');
+						$('#publish').val('<?php echo $status_button_label; ?>').attr('name','save');
 					<?php endif; ?>
 				});
 			</script>
-		<?php
+			<?php
 		}
 	}
 	function get_metabox_arg($id, $key, $default='') {
@@ -533,18 +527,18 @@ class WPF_Post_Type {
 		$metabox = (isset($this->meta_boxes[$box_id]) ? $this->meta_boxes[$box_id] : false);
 		if(!$metabox)
 			return false;
-
+		
 		$set_thumbnail_title = $this->get_metabox_arg($box_id, 'set_thumbnail_title', 'Set Custom Image');
 		$remove_thumbnail_title = $this->get_metabox_arg($box_id, 'remove_thumbnail_title', 'Remove Custom Image');
 		$set_thumbnail_action = $this->get_metabox_arg($box_id, 'set_thumbnail_action', 'Choose Image');
-
+		
 		$custom_id = $this->post_type.'-'.$box_id.'-thumbnail';
 		$image_size = (isset($this->meta_boxes[$box_id]['image_size']) ? $this->meta_boxes[$box_id]['image_size'] : 'post-thumbnail');
-
+		
 		$upload_iframe_src = esc_url( get_upload_iframe_src('image', $post->ID ) );
 		$set_thumbnail_link = '<p class="hide-if-no-js"><a title="' . $set_thumbnail_title . '" href="%s" data-id="set-'.$custom_id.'" class="thickbox">%s</a></p>';
 		$content = sprintf( $set_thumbnail_link, $upload_iframe_src, $set_thumbnail_title );
-
+	
 		if ( $thumbnail_id && get_post( $thumbnail_id ) ) {
 			$old_content_width = $content_width;
 			$content_width = 266;
@@ -555,7 +549,7 @@ class WPF_Post_Type {
 			if ( is_array($thumbnail) && !empty($thumbnail) ) {
 				$thumbnail_html = '<img src="'.$thumbnail[0].'" width="100%" />';
 			}
-
+			
 			if ( !empty( $thumbnail_html ) ) {
 				$ajax_nonce = wp_create_nonce( 'set_'.esc_attr($this->post_type).'_'.$box_id.'-' . $post->ID );
 				$content = sprintf( $set_thumbnail_link, $upload_iframe_src, $thumbnail_html );
@@ -565,11 +559,11 @@ class WPF_Post_Type {
 		}
 		// Add JS
 		$js_id = str_replace('-','_',$box_id);
-
+		
 		$content .= "
 		<script type='text/javascript'>
 			jQuery(document).ready( function($) {
-
+							
 				GE.WPFRemoveCustomThumbnail = function(nonce){
 					wp.media.post( 'set-custom-thumbnail-$this->post_type', {
 						json:         true,
@@ -581,19 +575,19 @@ class WPF_Post_Type {
 					}).done( function( html ) {
 						$( '.inside', '#$box_id' ).html( html );
 					});
-
+					
 				};
-
+				
 				wp.media.$js_id = {
 					get: function() {
 						return wp.media.view.settings.post.{$js_id}Id;
 					},
-
+			
 					set: function( id ) {
 						var settings = wp.media.view.settings;
-
+						
 						settings.post.{$js_id}Id = id;
-
+						
 						wp.media.post( 'set-custom-thumbnail-$this->post_type', {
 							json:         true,
 							post_id:      settings.post.id,
@@ -604,38 +598,38 @@ class WPF_Post_Type {
 							$( '.inside', '#$box_id' ).html( html );
 						});
 					},
-
+			
 					frame: function() {
 						if ( this._frame )
 							return this._frame;
-
+			
 						this._frame = wp.media({
 							title: '$set_thumbnail_title',
 							state: 'featured-image',
 							states: [ new wp.media.controller.FeaturedImage() ]
 						});
-
+			
 						this._frame.on( 'toolbar:create:featured-image', function( toolbar ) {
 							this.createSelectToolbar( toolbar, {
 								text: '$set_thumbnail_action'
 							});
 						}, this._frame );
-
+			
 						this._frame.state('featured-image').on( 'select', this.select );
 						return this._frame;
 					},
-
+			
 					select: function() {
 						var settings = wp.media.view.settings,
 							selection = this.get('selection').single();
-
+						
 						// Too lazy to create a new controller at this point
 						if ( ! settings.post.featuredImageId )
 							return;
-
+			
 						wp.media.{$js_id}.set( selection ? selection.id : -1 );
 					},
-
+			
 					init: function() {
 						// Open the content media manager to the 'featured image' tab when
 						// the post thumbnail is clicked.
@@ -643,9 +637,9 @@ class WPF_Post_Type {
 							event.preventDefault();
 							// Stop propagation to prevent thickbox from activating.
 							event.stopPropagation();
-
+			
 							wp.media.$js_id.frame().open();
-
+			
 						// Update the featured image id when the 'remove' link is clicked.
 						}).on( 'click', '[data-id=\"remove-$custom_id\"]', function() {
 							wp.media.view.settings.post.{$js_id}Id = -1;
@@ -658,15 +652,15 @@ class WPF_Post_Type {
 		";
 		//return $content;
 		return apply_filters( 'admin_post_thumbnail_html', $content, $post->ID );
-
+		
 	}
 	function _ajax_set_custom_thumbnail() {
 		$json = ! empty( $_REQUEST['json'] ); // New-style request
-
+	
 		$post_ID = intval( $_POST['post_id'] );
 		if ( ! current_user_can( 'edit_post', $post_ID ) )
 			wp_die( -1 );
-
+		
 		$box_id = esc_attr($_POST['box_id']);
 		$meta_key = (isset($this->meta_boxes[$box_id]['meta_key']) ? $this->meta_boxes[$box_id]['meta_key'] : 'custom_thumbnail');
 		$thumbnail_id = intval( $_POST['thumbnail_id'] );
@@ -689,7 +683,7 @@ class WPF_Post_Type {
 			$return = $this->_get_custom_thumbnail_html( $thumbnail_id, $post_ID, $box_id );
 			$json ? wp_send_json_success( $return ) : wp_die( $return );
 		}
-
+		
 		wp_die( 0 );
 	}
 	function set_custom_thumbnail( $post, $thumbnail_id, $meta_key='custom_thumbnail' ) {
@@ -738,7 +732,7 @@ class WPF_Post_Type {
 	function _move_metabox_context($id='',$new_context='normal',$priority='core') {
 		if(empty($id))
 			return;
-
+		
 		global $wp_meta_boxes;
 		foreach($wp_meta_boxes as $type => $locations) {
 			foreach($locations as $location => $context) {
@@ -758,7 +752,7 @@ class WPF_Post_Type {
 		// remove a metabox independently of where a user might have moved it to.
 		if(empty($id))
 			return;
-
+		
 		global $wp_meta_boxes;
 		foreach($wp_meta_boxes as $type => $locations) {
 			foreach($locations as $location => $context) {
